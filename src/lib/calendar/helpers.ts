@@ -163,6 +163,31 @@ export function isWorkingHour(day: Date, hour: number, workingHours: TWorkingHou
 	return hour >= dayHours.from && hour < dayHours.to;
 }
 
+/**
+ * Keeps an hour range non-empty. Both the visible-hours and working-hours
+ * editors let you set `from` and `to` independently, and an inverted range
+ * silently renders an empty grid — `getVisibleHours` would build an array of
+ * negative length. The field the user just edited wins; the other one yields.
+ */
+export function normalizeHourRange(
+	range: TVisibleHours,
+	edited: 'from' | 'to'
+): { from: number; to: number } {
+	// Midnight as an end hour means "end of day", not hour zero.
+	let to = range.to === 0 ? 24 : range.to;
+	let from = range.from;
+
+	if (edited === 'from') {
+		from = Math.min(Math.max(from, 0), 23);
+		if (from >= to) to = from + 1;
+	} else {
+		to = Math.min(Math.max(to, 1), 24);
+		if (to <= from) from = to - 1;
+	}
+
+	return { from, to };
+}
+
 export function getVisibleHours(visibleHours: TVisibleHours, singleDayEvents: IEvent[]) {
 	let earliestEventHour = visibleHours.from;
 	let latestEventHour = visibleHours.to;
