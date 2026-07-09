@@ -7,6 +7,7 @@
 
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog';
+	import { getCalendarState } from '../../contexts/calendar-context.svelte';
 	import EditEventDialog from './edit-event-dialog.svelte';
 
 	import type { Snippet } from 'svelte';
@@ -17,11 +18,32 @@
 	let { event, children }: { event: IEvent; children: Snippet<[Record<string, unknown>]> } =
 		$props();
 
+	const calendar = getCalendarState();
+
 	const startDate = $derived(parseISO(event.startDate));
 	const endDate = $derived(parseISO(event.endDate));
+
+	let open = $state(false);
+	let confirming = $state(false);
+
+	// Reopening any event must start from a clean Delete button; a primed
+	// "Click again to confirm" carried over from a previous session is a footgun.
+	$effect(() => {
+		if (!open) confirming = false;
+	});
+
+	function handleDelete() {
+		if (!confirming) {
+			confirming = true;
+			return;
+		}
+
+		calendar.deleteEvent(event.id);
+		open = false;
+	}
 </script>
 
-<Dialog.Root>
+<Dialog.Root bind:open>
 	<Dialog.Trigger>
 		{#snippet child({ props })}
 			{@render children(props)}
@@ -69,6 +91,10 @@
 		</div>
 
 		<Dialog.Footer>
+			<Button type="button" variant="destructive" onclick={handleDelete}>
+				{confirming ? 'Click again to confirm' : 'Delete'}
+			</Button>
+
 			<EditEventDialog {event}>
 				{#snippet children(triggerProps)}
 					<Button {...triggerProps} type="button" variant="outline">Edit</Button>
