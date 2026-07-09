@@ -1,7 +1,8 @@
 <script lang="ts">
-	import TriangleAlertIcon from '@lucide/svelte/icons/triangle-alert';
 	import { superForm, defaults } from 'sveltekit-superforms';
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
+
+	import { getCalendarState } from '../../contexts/calendar-context.svelte';
 
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -23,6 +24,8 @@
 	} = $props();
 
 	let open = $state(false);
+
+	const calendar = getCalendarState();
 
 	// Seeds the form once from the clicked time slot, like the React version's
 	// `defaultValues` plus its `form.reset` effect.
@@ -54,7 +57,29 @@
 			resetForm: false,
 			onUpdate({ form: validated }) {
 				if (!validated.valid) return;
-				// TO DO: Create an add-event action. The React version is a no-op too.
+
+				const values = validated.data;
+				const user = calendar.users.find((u) => u.id === values.user);
+				if (!user) throw new Error('User not found');
+
+				// Throwaway Dates, read once as ISO strings below.
+				/* eslint-disable svelte/prefer-svelte-reactivity */
+				const startDateTime = new Date(values.startDate);
+				startDateTime.setHours(values.startTime.hour, values.startTime.minute);
+
+				const endDateTime = new Date(values.endDate);
+				endDateTime.setHours(values.endTime.hour, values.endTime.minute);
+				/* eslint-enable svelte/prefer-svelte-reactivity */
+
+				calendar.addEvent({
+					user,
+					title: values.title,
+					color: values.color,
+					description: values.description,
+					startDate: startDateTime.toISOString(),
+					endDate: endDateTime.toISOString()
+				});
+
 				open = false;
 				form.reset();
 			}
@@ -74,11 +99,7 @@
 	<Dialog.Content class="max-h-[90vh] overflow-y-auto">
 		<Dialog.Header>
 			<Dialog.Title>Add New Event</Dialog.Title>
-			<Dialog.Description>
-				<TriangleAlertIcon class="mr-1 inline-block size-4 text-yellow-500" />
-				This form is for demonstration purposes only and will not actually create an event. In a real
-				application, submit the form to the backend API to save the event.
-			</Dialog.Description>
+			<Dialog.Description>Events are saved in this browser only.</Dialog.Description>
 		</Dialog.Header>
 
 		<form id="add-event-form" method="POST" use:enhance class="grid gap-4 py-4">
