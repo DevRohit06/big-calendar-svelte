@@ -1,8 +1,13 @@
 import { CALENDAR_ITEMS_MOCK, USERS_MOCK } from './mocks';
 
-// The mocks are randomly generated at module load, so these must only ever be
-// called from a server `load` — importing them into a component would generate
-// a different set of events on the server and the client.
+// The mocks are randomly generated at module load. That used to force these to
+// run only in a server `load`, because a server/client SSR mismatch would occur
+// if the same module randomised differently on each side. Now that the browser
+// owns the data — it seeds the store from localStorage (or these mocks) inside a
+// client-only `$effect`, and there is no SSR of this data to disagree with — it
+// is safe to call them from the client. The mocks are only a first-run fallback:
+// once the user makes any change it is written to localStorage, and from then on
+// the stored copy wins over these freshly-randomised mocks.
 
 export const getEvents = async () => {
 	// TO DO: implement this

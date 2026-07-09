@@ -44,11 +44,3 @@ export function saveEvents(events: IEvent[]): void {
 		// Ignored on purpose — see above.
 	}
 }
-
-export function clearEvents(): void {
-	try {
-		localStorage.removeItem(KEY);
-	} catch {
-		// Ignored on purpose — see above.
-	}
-}
