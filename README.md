@@ -4,7 +4,7 @@ A feature-rich calendar built with **SvelteKit**, **Svelte 5 runes**, **TypeScri
 
 This is a port of [**lramos33/big-calendar**](https://github.com/lramos33/big-calendar) — Leonardo Ramos's excellent Next.js + React calendar — rebuilt for Svelte. See [Credits](#credits).
 
-> **Status:** Views, header, settings, and event dialogs are complete and working. **Drag and drop is not implemented yet** — see [Roadmap](#roadmap).
+> **Status:** Views, header, settings, event dialogs, and drag and drop are complete and working.
 
 ## Features
 
@@ -14,6 +14,9 @@ This is a port of [**lramos33/big-calendar**](https://github.com/lramos33/big-ca
   - Seven event colors
   - Three badge variants (dot, colored, mixed)
   - Single- and multi-day events, with multi-day events spanning cells
+- 🖱️ **Drag and drop**
+  - Drag events onto another day in the month view, or onto any quarter-hour slot in the week and day views
+  - Resize events by their top or bottom edge to change start or end time, with keyboard support
 - 👥 **User management**
   - Filter events by user, or view everyone at once
   - Avatar group in the user picker
@@ -67,7 +70,7 @@ bun run build     # production build
 src/
 ├── routes/
 │   ├── +layout.server.ts             # Loads users + events (server-only)
-│   ├── +layout.svelte                # CalendarProvider + settings accordion
+│   ├── +layout.svelte                # CalendarProvider
 │   ├── layout.css                    # Tailwind v4 theme, custom utilities
 │   └── {day,week,month,year,agenda}-view/
 ├── lib/
@@ -75,7 +78,7 @@ src/
 │   │   ├── components/
 │   │   │   ├── agenda-view/
 │   │   │   ├── dialogs/              # Add / edit / details dialogs
-│   │   │   ├── dnd/                  # Drag and drop (stubs, see Roadmap)
+│   │   │   ├── dnd/                  # Drag and drop (pragmatic-drag-and-drop)
 │   │   │   ├── header/
 │   │   │   ├── month-view/
 │   │   │   ├── week-and-day-view/
@@ -180,13 +183,12 @@ Two bugs in the original were fixed along the way: `getEventBlockStyle` mutated 
 
 ## Roadmap
 
-- [ ] **Drag and drop.** The components in `src/lib/calendar/components/dnd/` are typed pass-through stubs. The plan is `@neodrag/svelte` for dragging plus hand-rolled pointer hit-testing for the day-cell and quarter-hour drop targets, since neodrag has no drop-target concept.
 - [ ] Persist badge variant and working hours across reloads.
 - [ ] Component tests (vitest + vitest-browser-svelte are already configured).
 
 ## Credits
 
-This project is a Svelte port of [**big-calendar**](https://github.com/lramos33/big-calendar) by **[Leonardo Ramos](https://github.com/lramos33)** ([@leoo_ramos1](https://x.com/leoo_ramos1)). The layout algorithms, view structure, event model, and visual design are his work — this port translates them to Svelte 5 rather than reinventing them. If you find this useful, please star [the original repository](https://github.com/lramos33/big-calendar) and consider [buying him a coffee](https://www.buymeacoffee.com/lramos33).
+This project is a Svelte port of [**big-calendar**](https://github.com/lramos33/big-calendar) by **[Leonardo Ramos](https://github.com/lramos33)** ([@leoo_ramos1](https://x.com/leoo_ramos1)). The layout algorithms, view structure, event model, and visual design are his work — this port translates them to Svelte 5 rather than reinventing them. If you find this useful, please star [the original repository](https://github.com/lramos33/big-calendar).
 
 Built with [SvelteKit](https://svelte.dev/docs/kit), [shadcn-svelte](https://shadcn-svelte.com), [bits-ui](https://bits-ui.com), [date-fns](https://date-fns.org), and [Tailwind CSS](https://tailwindcss.com).
 
