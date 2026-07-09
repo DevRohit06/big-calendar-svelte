@@ -3,14 +3,14 @@
 	import MoonIcon from '@lucide/svelte/icons/moon';
 
 	import { getCalendarState } from '../contexts/calendar-context.svelte';
+	import { normalizeHourRange } from '../helpers';
 
-	import { Button } from '$lib/components/ui/button';
+	import { Label } from '$lib/components/ui/label';
 	import { Switch } from '$lib/components/ui/switch';
 	import { TimeInput } from '$lib/components/ui/time-input';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 
-	import type { TWorkingHours } from '../types';
-
+	// Indexed by `Date.getDay()`, and listed Sunday-first to match the week grid.
 	const DAYS_OF_WEEK = [
 		{ index: 0, name: 'Sunday' },
 		{ index: 1, name: 'Monday' },
@@ -21,56 +21,51 @@
 		{ index: 6, name: 'Saturday' }
 	];
 
+	const CLOSED = { from: 0, to: 0 };
+	const DEFAULT_HOURS = { from: 9, to: 17 };
+
 	const calendar = getCalendarState();
 
-	let localWorkingHours = $state<TWorkingHours>({ ...calendar.workingHours });
+	// Closing a day zeroes its hours, so remember them and restore on reopen
+	// rather than snapping every reopened day back to 9–5.
+	let lastOpenHours = $state<Record<number, { from: number; to: number }>>({});
 
-	const isDayActive = (dayId: number) =>
-		localWorkingHours[dayId].from > 0 || localWorkingHours[dayId].to > 0;
+	const isOpen = (dayId: number) => {
+		const day = calendar.workingHours[dayId];
+		return day.from > 0 || day.to > 0;
+	};
 
-	function handleToggleDay(dayId: number) {
-		localWorkingHours[dayId] = isDayActive(dayId) ? { from: 0, to: 0 } : { from: 9, to: 17 };
+	function setDay(dayId: number, value: { from: number; to: number }) {
+		calendar.workingHours = { ...calendar.workingHours, [dayId]: value };
 	}
 
-	function handleTimeChange(
-		dayId: number,
-		timeType: 'from' | 'to',
-		value: { hour: number; minute: number } | undefined
-	) {
-		if (!value) return;
-
-		const updatedDay = { ...localWorkingHours[dayId], [timeType]: value.hour };
-		if (timeType === 'to' && value.hour === 0 && updatedDay.from === 0) updatedDay.to = 24;
-		localWorkingHours[dayId] = updatedDay;
-	}
-
-	function handleSave() {
-		const updated: TWorkingHours = {};
-
-		for (const key of Object.keys(localWorkingHours)) {
-			const dayId = Number(key);
-			const day = localWorkingHours[dayId];
-
-			if (isDayActive(dayId)) {
-				if (day.from === 0 && day.to === 0) updated[dayId] = { from: 0, to: 24 };
-				else if (day.to === 0 && day.from > 0) updated[dayId] = { ...day, to: 24 };
-				else updated[dayId] = { ...day };
-			} else {
-				updated[dayId] = { from: 0, to: 0 };
-			}
+	function toggleDay(dayId: number) {
+		if (isOpen(dayId)) {
+			lastOpenHours[dayId] = calendar.workingHours[dayId];
+			setDay(dayId, CLOSED);
+		} else {
+			setDay(dayId, lastOpenHours[dayId] ?? DEFAULT_HOURS);
 		}
+	}
 
-		calendar.workingHours = updated;
+	function changeTime(dayId: number, edited: 'from' | 'to') {
+		return (value: { hour: number; minute: number } | undefined) => {
+			if (!value) return;
+			setDay(
+				dayId,
+				normalizeHourRange({ ...calendar.workingHours[dayId], [edited]: value.hour }, edited)
+			);
+		};
 	}
 </script>
 
-<div class="flex flex-col gap-2">
+<div class="flex flex-col gap-3">
 	<div class="flex items-center gap-2">
-		<p class="text-sm font-semibold">Change working hours</p>
+		<Label>Working hours</Label>
 
 		<Tooltip.Provider delayDuration={100}>
 			<Tooltip.Root>
-				<Tooltip.Trigger>
+				<Tooltip.Trigger aria-label="About working hours">
 					<InfoIcon class="size-3" />
 				</Tooltip.Trigger>
 
@@ -84,50 +79,45 @@
 		</Tooltip.Provider>
 	</div>
 
-	<div class="space-y-4">
+	<div class="grid gap-2">
 		{#each DAYS_OF_WEEK as day (day.index)}
-			<div class="flex items-center gap-4">
-				<div class="flex w-40 items-center gap-2">
-					<Switch
-						checked={isDayActive(day.index)}
-						onCheckedChange={() => handleToggleDay(day.index)}
-					/>
-					<span class="text-sm font-medium">{day.name}</span>
-				</div>
+			{@const open = isOpen(day.index)}
+			{@const hours = calendar.workingHours[day.index]}
 
-				{#if isDayActive(day.index)}
-					<div class="flex items-center gap-4">
-						<div class="flex items-center gap-2">
-							<span>From</span>
-							<TimeInput
-								id="{day.name.toLowerCase()}-from"
-								hourCycle={12}
-								granularity="hour"
-								value={{ hour: localWorkingHours[day.index].from, minute: 0 }}
-								onChange={(value) => handleTimeChange(day.index, 'from', value)}
-							/>
-						</div>
+			<div class="grid grid-cols-[auto_6rem_1fr] items-center gap-3">
+				<Switch checked={open} aria-label={day.name} onCheckedChange={() => toggleDay(day.index)} />
 
-						<div class="flex items-center gap-2">
-							<span>To</span>
-							<TimeInput
-								id="{day.name.toLowerCase()}-to"
-								hourCycle={12}
-								granularity="hour"
-								value={{ hour: localWorkingHours[day.index].to, minute: 0 }}
-								onChange={(value) => handleTimeChange(day.index, 'to', value)}
-							/>
-						</div>
+				<span class="text-sm font-medium">{day.name}</span>
+
+				{#if open}
+					<div class="flex items-center gap-2">
+						<TimeInput
+							id="{day.name.toLowerCase()}-from"
+							aria-label="{day.name} start"
+							hourCycle={12}
+							granularity="hour"
+							value={{ hour: hours.from, minute: 0 }}
+							onChange={changeTime(day.index, 'from')}
+						/>
+
+						<span class="text-muted-foreground" aria-hidden="true">&rarr;</span>
+
+						<TimeInput
+							id="{day.name.toLowerCase()}-to"
+							aria-label="{day.name} end"
+							hourCycle={12}
+							granularity="hour"
+							value={{ hour: hours.to % 24, minute: 0 }}
+							onChange={changeTime(day.index, 'to')}
+						/>
 					</div>
 				{:else}
-					<div class="text-muted-foreground flex items-center gap-2">
-						<MoonIcon class="size-4" />
+					<div class="text-muted-foreground flex items-center gap-1.5 text-sm">
+						<MoonIcon class="size-3.5" />
 						<span>Closed</span>
 					</div>
 				{/if}
 			</div>
 		{/each}
 	</div>
-
-	<Button class="mt-4 w-fit" onclick={handleSave}>Apply</Button>
 </div>

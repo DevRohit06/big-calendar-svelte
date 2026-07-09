@@ -2,30 +2,38 @@
 	import InfoIcon from '@lucide/svelte/icons/info';
 
 	import { getCalendarState } from '../contexts/calendar-context.svelte';
+	import { normalizeHourRange } from '../helpers';
 
-	import { Button } from '$lib/components/ui/button';
+	import { Label } from '$lib/components/ui/label';
 	import { TimeInput } from '$lib/components/ui/time-input';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 
 	const calendar = getCalendarState();
 
-	let from = $state({ hour: calendar.visibleHours.from, minute: 0 });
-	let to = $state({ hour: calendar.visibleHours.to, minute: 0 });
+	// Read straight from the store rather than a local copy, so the fields can
+	// never drift out of sync with the calendar. `to` is stored as 24 for "end
+	// of day", which `Time` rejects, so it displays as hour 0 — "12 AM".
+	const from = $derived({ hour: calendar.visibleHours.from, minute: 0 });
+	const to = $derived({ hour: calendar.visibleHours.to % 24, minute: 0 });
 
-	function handleApply() {
-		// Midnight as an end hour means "end of day", not hour zero.
-		const toHour = to.hour === 0 ? 24 : to.hour;
-		calendar.visibleHours = { from: from.hour, to: toHour };
+	function change(edited: 'from' | 'to') {
+		return (value: { hour: number; minute: number } | undefined) => {
+			if (!value) return;
+			calendar.visibleHours = normalizeHourRange(
+				{ ...calendar.visibleHours, [edited]: value.hour },
+				edited
+			);
+		};
 	}
 </script>
 
 <div class="flex flex-col gap-2">
 	<div class="flex items-center gap-2">
-		<p class="text-sm font-semibold">Change visible hours</p>
+		<Label for="visible-hours-from">Visible hours</Label>
 
 		<Tooltip.Provider delayDuration={100}>
 			<Tooltip.Root>
-				<Tooltip.Trigger>
+				<Tooltip.Trigger aria-label="About visible hours">
 					<InfoIcon class="size-3" />
 				</Tooltip.Trigger>
 
@@ -39,24 +47,24 @@
 		</Tooltip.Provider>
 	</div>
 
-	<div class="flex items-center gap-4">
-		<p>From</p>
+	<div class="flex items-center gap-3">
 		<TimeInput
-			id="start-time"
+			id="visible-hours-from"
 			hourCycle={12}
 			granularity="hour"
 			value={from}
-			onChange={(value) => value && (from = value)}
+			onChange={change('from')}
 		/>
-		<p>To</p>
+
+		<span class="text-muted-foreground" aria-hidden="true">&rarr;</span>
+
 		<TimeInput
-			id="end-time"
+			id="visible-hours-to"
+			aria-label="Visible hours end"
 			hourCycle={12}
 			granularity="hour"
 			value={to}
-			onChange={(value) => value && (to = value)}
+			onChange={change('to')}
 		/>
 	</div>
-
-	<Button class="mt-4 w-fit" onclick={handleApply}>Apply</Button>
 </div>

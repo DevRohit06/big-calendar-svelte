@@ -13,6 +13,7 @@
 	import TodayButton from './today-button.svelte';
 	import DateNavigator from './date-navigator.svelte';
 	import AddEventDialog from '../dialogs/add-event-dialog.svelte';
+	import CalendarSettingsDialog from '../dialogs/calendar-settings-dialog.svelte';
 
 	import type { IEvent } from '../../interfaces';
 	import type { TCalendarView } from '../../types';
@@ -82,6 +83,8 @@
 			</div>
 
 			<UserSelect />
+
+			<CalendarSettingsDialog />
 		</div>
 
 		<AddEventDialog>
