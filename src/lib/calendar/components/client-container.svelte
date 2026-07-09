@@ -3,8 +3,6 @@
 
 	import { getCalendarState } from '../contexts/calendar-context.svelte';
 
-	import DndProvider from './dnd/dnd-provider.svelte';
-
 	import CalendarHeader from './header/calendar-header.svelte';
 
 	import CalendarYearView from './year-view/calendar-year-view.svelte';
@@ -106,17 +104,15 @@
 <div class="overflow-hidden rounded-xl border">
 	<CalendarHeader {view} events={filteredEvents} />
 
-	<DndProvider>
-		{#if view === 'day'}
-			<CalendarDayView {singleDayEvents} {multiDayEvents} />
-		{:else if view === 'month'}
-			<CalendarMonthView {singleDayEvents} {multiDayEvents} />
-		{:else if view === 'week'}
-			<CalendarWeekView {singleDayEvents} {multiDayEvents} />
-		{:else if view === 'year'}
-			<CalendarYearView allEvents={eventStartDates} />
-		{:else if view === 'agenda'}
-			<CalendarAgendaView {singleDayEvents} {multiDayEvents} />
-		{/if}
-	</DndProvider>
+	{#if view === 'day'}
+		<CalendarDayView {singleDayEvents} {multiDayEvents} />
+	{:else if view === 'month'}
+		<CalendarMonthView {singleDayEvents} {multiDayEvents} />
+	{:else if view === 'week'}
+		<CalendarWeekView {singleDayEvents} {multiDayEvents} />
+	{:else if view === 'year'}
+		<CalendarYearView allEvents={eventStartDates} />
+	{:else if view === 'agenda'}
+		<CalendarAgendaView {singleDayEvents} {multiDayEvents} />
+	{/if}
 </div>

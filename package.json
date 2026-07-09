@@ -54,7 +54,7 @@
 		"vitest-browser-svelte": "^2.1.1"
 	},
 	"dependencies": {
-		"@neodrag/svelte": "^2.3.3",
+		"@atlaskit/pragmatic-drag-and-drop": "^2.0.1",
 		"date-fns": "^4.4.0",
 		"mode-watcher": "^1.1.0",
 		"zod": "^4.4.3"

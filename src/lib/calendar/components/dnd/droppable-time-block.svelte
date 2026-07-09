@@ -1,17 +1,38 @@
 <script lang="ts">
+	import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 	import type { Snippet } from 'svelte';
 
-	// TODO(dnd): accept dropped events at this date/hour/minute.
-	/* eslint-disable @typescript-eslint/no-unused-vars */
+	import { getCalendarState } from '../../contexts/calendar-context.svelte';
+	import { isEventDragData, moveEventToTime } from './dnd';
+
+	import { cn } from '$lib/utils';
+
 	let {
 		date,
 		hour,
 		minute,
 		children
 	}: { date: Date; hour: number; minute: number; children: Snippet } = $props();
-	/* eslint-enable @typescript-eslint/no-unused-vars */
+
+	const calendar = getCalendarState();
+
+	let isOver = $state(false);
+
+	function dropTarget(element: HTMLElement) {
+		return dropTargetForElements({
+			element,
+			canDrop: ({ source }) => isEventDragData(source.data),
+			onDragEnter: () => (isOver = true),
+			onDragLeave: () => (isOver = false),
+			onDrop: ({ source }) => {
+				isOver = false;
+				if (!isEventDragData(source.data)) return;
+				calendar.updateEvent(moveEventToTime(source.data.event, date, hour, minute));
+			}
+		});
+	}
 </script>
 
-<div class="h-[24px]">
+<div {@attach dropTarget} class={cn('h-[24px]', isOver && 'bg-primary/20')}>
 	{@render children()}
 </div>
