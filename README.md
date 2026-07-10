@@ -11,8 +11,14 @@ This is a port of [**lramos33/big-calendar**](https://github.com/lramos33/big-ca
 - 📅 **Five calendar views**
   - Agenda, Year, Month, Week (detailed time slots), Day (hourly breakdown)
 - ✏️ **Create, edit, and delete events**
+  - Drag across empty grid slots in the week or day view to block out a new event
   - Your events are saved in this browser (`localStorage`), and survive a reload
   - "Reset to sample data" in settings puts the demo back the way it started
+- ↩️ **Undo and redo**
+  - `⌘Z` / `Ctrl+Z` undoes, `⇧⌘Z` / `Ctrl+Y` redoes — every create, edit, move, resize, and delete
+  - Each change raises a toast with an Undo button
+- ⌨️ **Command palette**
+  - `⌘K` / `Ctrl+K` to switch views, jump to today, create an event, or search events by title
 - 🎨 **Event customization**
   - Seven event colors
   - Three badge variants (dot, colored, mixed)
@@ -20,6 +26,7 @@ This is a port of [**lramos33/big-calendar**](https://github.com/lramos33/big-ca
   - Busy month cells reveal their hidden events in a popover
 - 🖱️ **Drag and drop**
   - Drag events onto another day in the month view, or onto any quarter-hour slot in the week and day views
+  - Drag across empty slots to create an event over exactly that range; `Esc` abandons the drag
   - Resize events by their top or bottom edge to change start or end time, with keyboard support
 - 👥 **User management**
   - Filter events by user, or view everyone at once
@@ -81,15 +88,20 @@ src/
 │   │   ├── components/
 │   │   │   ├── agenda-view/
 │   │   │   ├── dialogs/              # Add / edit / details dialogs
-│   │   │   ├── dnd/                  # Drag and drop (pragmatic-drag-and-drop)
+│   │   │   ├── dnd/                  # Drag, resize, drag-to-create
 │   │   │   ├── header/
 │   │   │   ├── month-view/
 │   │   │   ├── week-and-day-view/
-│   │   │   └── year-view/
+│   │   │   ├── year-view/
+│   │   │   ├── command-palette.svelte
+│   │   │   └── keyboard-shortcuts.svelte
 │   │   ├── contexts/                 # CalendarState class ($state runes)
 │   │   ├── helpers.ts                # Pure date/layout math
+│   │   ├── history.ts                # Snapshot undo/redo stacks
 │   │   ├── interfaces.ts
+│   │   ├── notifications.ts          # Undoable toasts
 │   │   ├── schemas.ts                # zod event schema
+│   │   ├── storage.ts                # Versioned localStorage codec
 │   │   └── types.ts
 │   ├── components/ui/                # shadcn-svelte + two custom components
 │   └── hooks/
