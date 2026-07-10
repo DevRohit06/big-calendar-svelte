@@ -26,12 +26,6 @@
 	let open = $state(false);
 	let confirming = $state(false);
 
-	// Reopening any event must start from a clean Delete button; a primed
-	// "Click again to confirm" carried over from a previous session is a footgun.
-	$effect(() => {
-		if (!open) confirming = false;
-	});
-
 	function handleDelete() {
 		if (!confirming) {
 			confirming = true;
@@ -39,11 +33,15 @@
 		}
 
 		calendar.deleteEvent(event.id);
+
+		// Closing programmatically does not fire `onOpenChange`, so disarm here too.
+		confirming = false;
 		open = false;
 	}
 </script>
 
-<Dialog.Root bind:open>
+<!-- Closing must disarm Delete; reopening any event should never show it primed. -->
+<Dialog.Root bind:open onOpenChange={(next) => !next && (confirming = false)}>
 	<Dialog.Trigger>
 		{#snippet child({ props })}
 			{@render children(props)}
