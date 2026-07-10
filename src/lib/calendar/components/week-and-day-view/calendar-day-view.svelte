@@ -222,9 +222,14 @@
 				<CalendarDay>
 					{date.day}
 
-					{#if !outsideMonth}
-						<EventDots events={eventsByStartDay[date.toString()] ?? []} />
-					{/if}
+					<!-- The dot row is always reserved, even when empty. `CalendarDay` centres
+					     its children, so a cell that only sometimes has dots would sit its
+					     number 5px higher than its neighbours and the week would jitter. -->
+					<div class="flex h-2 items-center justify-center">
+						{#if !outsideMonth}
+							<EventDots events={eventsByStartDay[date.toString()] ?? []} />
+						{/if}
+					</div>
 				</CalendarDay>
 			{/snippet}
 		</Calendar>
