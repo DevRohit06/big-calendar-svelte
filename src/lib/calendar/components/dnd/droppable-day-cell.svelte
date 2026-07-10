@@ -3,6 +3,7 @@
 	import type { Snippet } from 'svelte';
 
 	import { getCalendarState } from '../../contexts/calendar-context.svelte';
+	import { toastMutation } from '../../notifications';
 	import { isEventDragData, moveEventToDay } from './dnd';
 
 	import { cn } from '$lib/utils';
@@ -25,6 +26,7 @@
 				isOver = false;
 				if (!isEventDragData(source.data)) return;
 				calendar.updateEvent(moveEventToDay(source.data.event, cell.date));
+				toastMutation(calendar, 'Event moved');
 			}
 		});
 	}

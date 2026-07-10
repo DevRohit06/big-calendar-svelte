@@ -8,6 +8,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { getCalendarState } from '../../contexts/calendar-context.svelte';
+	import { toastMutation } from '../../notifications';
 	import EditEventDialog from './edit-event-dialog.svelte';
 
 	import type { Snippet } from 'svelte';
@@ -33,6 +34,7 @@
 		}
 
 		calendar.deleteEvent(event.id);
+		toastMutation(calendar, 'Event deleted');
 
 		// Closing programmatically does not fire `onOpenChange`, so disarm here too.
 		confirming = false;
