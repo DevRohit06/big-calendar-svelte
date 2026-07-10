@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import { isToday, startOfDay } from 'date-fns';
+	import { format, isToday, startOfDay } from 'date-fns';
 
 	import { getCalendarState } from '../../contexts/calendar-context.svelte';
+
+	import * as Popover from '$lib/components/ui/popover';
 
 	import EventBullet from './event-bullet.svelte';
 	import DroppableDayCell from '../dnd/droppable-day-cell.svelte';
@@ -69,15 +71,42 @@
 		</div>
 
 		{#if cellEvents.length > MAX_VISIBLE_EVENTS}
-			<p
-				class={cn(
-					'h-4.5 px-1.5 text-xs font-semibold text-muted-foreground',
-					!cell.currentMonth && 'opacity-50'
-				)}
-			>
-				<span class="sm:hidden">+{cellEvents.length - MAX_VISIBLE_EVENTS}</span>
-				<span class="hidden sm:inline"> {cellEvents.length - MAX_VISIBLE_EVENTS} more...</span>
-			</p>
+			{@const hidden = cellEvents.length - MAX_VISIBLE_EVENTS}
+
+			<Popover.Root>
+				<Popover.Trigger>
+					{#snippet child({ props })}
+						<button
+							{...props}
+							aria-label="Show all {cellEvents.length} events on {format(cell.date, 'MMMM d')}"
+							class={cn(
+								'text-muted-foreground hover:text-foreground focus-visible:ring-ring h-4.5 px-1.5 text-left text-xs font-semibold hover:underline focus-visible:outline-none focus-visible:ring-1',
+								!cell.currentMonth && 'opacity-50'
+							)}
+						>
+							<span class="sm:hidden">+{hidden}</span>
+							<span class="hidden sm:inline"> {hidden} more...</span>
+						</button>
+					{/snippet}
+				</Popover.Trigger>
+
+				<Popover.Content class="w-72 p-2">
+					<p class="px-1 pb-2 text-sm font-semibold">{format(cell.date, 'EEEE, MMMM d')}</p>
+
+					<div class="flex max-h-64 flex-col gap-1 overflow-y-auto">
+						{#each cellEvents as event (event.id)}
+							<!-- `position="none"` so multi-day events still show their title here,
+							     rather than the blank continuation strip they render in the grid. -->
+							<MonthEventBadge
+								class="flex"
+								{event}
+								cellDate={startOfDay(cell.date)}
+								position="none"
+							/>
+						{/each}
+					</div>
+				</Popover.Content>
+			</Popover.Root>
 		{/if}
 	</div>
 </DroppableDayCell>
