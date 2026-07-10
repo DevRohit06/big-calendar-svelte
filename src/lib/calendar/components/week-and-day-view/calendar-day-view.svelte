@@ -10,7 +10,13 @@
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import { Calendar, Day as CalendarDay } from '$lib/components/ui/calendar';
 
+	import CalendarX2Icon from '@lucide/svelte/icons/calendar-x-2';
+	import PlusIcon from '@lucide/svelte/icons/plus';
+
+	import { Button } from '$lib/components/ui/button';
+
 	import EventDots from '../event-dots.svelte';
+	import EmptyState from '../empty-state.svelte';
 	import AddEventDialog from '../dialogs/add-event-dialog.svelte';
 	import EventBlock from './event-block.svelte';
 	import DroppableTimeBlock from '../dnd/droppable-time-block.svelte';
@@ -40,6 +46,9 @@
 
 	const visible = $derived(getVisibleHours(calendar.visibleHours, singleDayEvents));
 	const currentEvents = $derived(getCurrentEvents(singleDayEvents));
+
+	// Both props arrive already narrowed to the selected day by `client-container`.
+	const isDayEmpty = $derived(singleDayEvents.length === 0 && multiDayEvents.length === 0);
 
 	// A finished create-drag hands back a time range; mounting the dialog against
 	// it seeds a fresh form. Unmounting on close is what resets it — `superForm`
@@ -245,7 +254,26 @@
 		</Calendar>
 
 		<div class="flex-1 space-y-3">
-			{#if currentEvents.length > 0}
+			<!-- Three states, not two: a day with nothing on it is a different thing
+			     from a day whose events are simply not happening right now, and only
+			     the first is worth offering a Create button for. -->
+			{#if isDayEmpty}
+				<EmptyState
+					icon={CalendarX2Icon}
+					title="Nothing scheduled today"
+					description="Drag across the grid to block out a time, or create an event."
+					class="p-6"
+				>
+					<AddEventDialog startDate={calendar.selectedDate}>
+						{#snippet children(triggerProps)}
+							<Button {...triggerProps} size="sm">
+								<PlusIcon />
+								Create event
+							</Button>
+						{/snippet}
+					</AddEventDialog>
+				</EmptyState>
+			{:else if currentEvents.length > 0}
 				<div class="flex items-start gap-2 px-4 pt-4">
 					<span class="relative mt-[5px] flex size-2.5">
 						<span

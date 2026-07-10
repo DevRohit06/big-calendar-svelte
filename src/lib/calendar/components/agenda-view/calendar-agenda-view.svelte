@@ -1,10 +1,14 @@
 <script lang="ts">
 	import CalendarX2Icon from '@lucide/svelte/icons/calendar-x-2';
+	import PlusIcon from '@lucide/svelte/icons/plus';
 	import { parseISO, format, endOfDay, startOfDay, isSameMonth } from 'date-fns';
 
 	import { getCalendarState } from '../../contexts/calendar-context.svelte';
 
+	import { Button } from '$lib/components/ui/button';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
+	import AddEventDialog from '../dialogs/add-event-dialog.svelte';
+	import EmptyState from '../empty-state.svelte';
 	import AgendaDayGroup from './agenda-day-group.svelte';
 
 	import type { IEvent } from '../../interfaces';
@@ -73,10 +77,21 @@
 			{/each}
 
 			{#if !hasAnyEvents}
-				<div class="text-muted-foreground flex flex-col items-center justify-center gap-2 py-20">
-					<CalendarX2Icon class="size-10" />
-					<p class="text-sm md:text-base">No events scheduled for the selected month</p>
-				</div>
+				<EmptyState
+					icon={CalendarX2Icon}
+					title="Nothing scheduled this month"
+					description="Create an event, or press N from anywhere."
+					class="py-20"
+				>
+					<AddEventDialog startDate={calendar.selectedDate}>
+						{#snippet children(triggerProps)}
+							<Button {...triggerProps} size="sm">
+								<PlusIcon />
+								Create event
+							</Button>
+						{/snippet}
+					</AddEventDialog>
+				</EmptyState>
 			{/if}
 		</div>
 	</ScrollArea>
