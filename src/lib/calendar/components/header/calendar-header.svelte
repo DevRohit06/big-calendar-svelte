@@ -10,6 +10,7 @@
 	import { Button } from '$lib/components/ui/button';
 
 	import UserSelect from './user-select.svelte';
+	import ThemeToggle from './theme-toggle.svelte';
 	import TodayButton from './today-button.svelte';
 	import DateNavigator from './date-navigator.svelte';
 	import AddEventDialog from '../dialogs/add-event-dialog.svelte';
@@ -83,6 +84,8 @@
 			</div>
 
 			<UserSelect />
+
+			<ThemeToggle />
 
 			<CalendarSettingsDialog />
 		</div>
