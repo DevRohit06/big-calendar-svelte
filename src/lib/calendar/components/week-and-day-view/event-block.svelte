@@ -40,6 +40,7 @@
 	import { format, differenceInMinutes, parseISO } from 'date-fns';
 
 	import { getCalendarState } from '../../contexts/calendar-context.svelte';
+	import { toastMutation } from '../../notifications';
 
 	import DraggableEvent from '../dnd/draggable-event.svelte';
 	import EventDetailsDialog from '../dialogs/event-details-dialog.svelte';
@@ -106,7 +107,11 @@
 				handle.removeEventListener('pointerup', onEnd);
 				handle.removeEventListener('pointercancel', onEnd);
 
-				if (preview) calendar.updateEvent(preview);
+				if (preview) {
+					calendar.updateEvent(preview);
+					toastMutation(calendar, 'Event resized');
+				}
+
 				preview = null;
 				resizing = false;
 			};
@@ -126,6 +131,7 @@
 
 			const step = key.key === 'ArrowUp' ? -SLOT_MINUTES : SLOT_MINUTES;
 			calendar.updateEvent(resizeEvent(event, edge, step));
+			toastMutation(calendar, 'Event resized');
 		};
 	}
 

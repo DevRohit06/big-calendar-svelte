@@ -3,6 +3,7 @@
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
 
 	import { getCalendarState } from '../../contexts/calendar-context.svelte';
+	import { toastMutation } from '../../notifications';
 
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -13,22 +14,30 @@
 
 	import type { Snippet } from 'svelte';
 
+	// `children` is the trigger. Omit it and the dialog is driven entirely by
+	// `open` — that is how a drag across empty slots opens it, with no element to
+	// have clicked.
 	let {
+		open = $bindable(false),
 		startDate,
 		startTime,
+		endDate,
+		endTime,
 		children
 	}: {
+		open?: boolean;
 		startDate?: Date;
 		startTime?: { hour: number; minute: number };
-		children: Snippet<[Record<string, unknown>]>;
+		endDate?: Date;
+		endTime?: { hour: number; minute: number };
+		children?: Snippet<[Record<string, unknown>]>;
 	} = $props();
-
-	let open = $state(false);
 
 	const calendar = getCalendarState();
 
 	// Seeds the form once from the clicked time slot, like the React version's
-	// `defaultValues` plus its `form.reset` effect.
+	// `defaultValues` plus its `form.reset` effect. Callers that need a different
+	// seed mount a fresh instance rather than reassigning these props.
 	// svelte-ignore state_referenced_locally
 	// The explicit `undefined`s override superforms' schema defaults, which would
 	// otherwise prefill End Time as 12:00 AM and Color as the first enum member.
@@ -41,8 +50,8 @@
 				description: '',
 				startDate,
 				startTime,
-				endDate: undefined,
-				endTime: undefined,
+				endDate,
+				endTime,
 				color: undefined
 			},
 			zod4(eventSchema)
@@ -80,6 +89,7 @@
 					endDate: endDateTime.toISOString()
 				});
 
+				toastMutation(calendar, 'Event created');
 				open = false;
 				form.reset();
 			}
@@ -90,11 +100,13 @@
 </script>
 
 <Dialog.Root bind:open>
-	<Dialog.Trigger>
-		{#snippet child({ props })}
-			{@render children(props)}
-		{/snippet}
-	</Dialog.Trigger>
+	{#if children}
+		<Dialog.Trigger>
+			{#snippet child({ props })}
+				{@render children(props)}
+			{/snippet}
+		</Dialog.Trigger>
+	{/if}
 
 	<Dialog.Content class="max-h-[90vh] overflow-y-auto">
 		<Dialog.Header>

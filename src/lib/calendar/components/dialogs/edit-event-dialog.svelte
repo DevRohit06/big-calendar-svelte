@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { parseISO } from 'date-fns';
-	import TriangleAlertIcon from '@lucide/svelte/icons/triangle-alert';
 	import { superForm, defaults } from 'sveltekit-superforms';
 	import { zod4, zod4Client } from 'sveltekit-superforms/adapters';
 
 	import { getCalendarState } from '../../contexts/calendar-context.svelte';
+	import { toastMutation } from '../../notifications';
 
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -79,6 +79,7 @@
 					endDate: endDateTime.toISOString()
 				});
 
+				toastMutation(calendar, 'Event updated');
 				open = false;
 			}
 		}
@@ -100,11 +101,7 @@
 	<Dialog.Content class="max-h-[90vh] overflow-y-auto">
 		<Dialog.Header>
 			<Dialog.Title>Edit Event</Dialog.Title>
-			<Dialog.Description>
-				<TriangleAlertIcon class="mr-1 inline-block size-4 text-yellow-500" />
-				This form is for demonstration purposes only. In a real application, submit the form to the backend
-				API to save the event.
-			</Dialog.Description>
+			<Dialog.Description>Changes are saved in this browser only.</Dialog.Description>
 		</Dialog.Header>
 
 		<form id={formId} method="POST" use:enhance class="grid gap-4 py-4">
