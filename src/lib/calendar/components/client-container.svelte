@@ -4,6 +4,7 @@
 	import { getCalendarState } from '../contexts/calendar-context.svelte';
 
 	import CalendarHeader from './header/calendar-header.svelte';
+	import CalendarSkeleton from './calendar-skeleton.svelte';
 
 	import CalendarYearView from './year-view/calendar-year-view.svelte';
 	import CalendarMonthView from './month-view/calendar-month-view.svelte';
@@ -104,15 +105,23 @@
 <div class="overflow-hidden rounded-xl border">
 	<CalendarHeader {view} events={filteredEvents} />
 
-	{#if view === 'day'}
-		<CalendarDayView {singleDayEvents} {multiDayEvents} />
-	{:else if view === 'month'}
-		<CalendarMonthView {singleDayEvents} {multiDayEvents} />
-	{:else if view === 'week'}
-		<CalendarWeekView {singleDayEvents} {multiDayEvents} />
-	{:else if view === 'year'}
-		<CalendarYearView allEvents={eventStartDates} />
-	{:else if view === 'agenda'}
-		<CalendarAgendaView {singleDayEvents} {multiDayEvents} />
+	<!-- Until the browser has read localStorage, `events` is an empty array that
+	     would flash an eventless calendar before the real data pops in. The
+	     skeleton covers that window; server-rendered HTML shows it too, so there
+	     is no hydration flicker. -->
+	{#if calendar.hydrated}
+		{#if view === 'day'}
+			<CalendarDayView {singleDayEvents} {multiDayEvents} />
+		{:else if view === 'month'}
+			<CalendarMonthView {singleDayEvents} {multiDayEvents} />
+		{:else if view === 'week'}
+			<CalendarWeekView {singleDayEvents} {multiDayEvents} />
+		{:else if view === 'year'}
+			<CalendarYearView allEvents={eventStartDates} />
+		{:else if view === 'agenda'}
+			<CalendarAgendaView {singleDayEvents} {multiDayEvents} />
+		{/if}
+	{:else}
+		<CalendarSkeleton {view} />
 	{/if}
 </div>
