@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { isSameDay, parseISO } from 'date-fns';
-	import { browser } from '$app/environment';
-	import { Shimmer } from '@shimmer-from-structure/svelte';
+	import { onMount } from 'svelte';
 
 	import { getCalendarState } from '../contexts/calendar-context.svelte';
 
@@ -19,6 +18,26 @@
 	let { view }: { view: TCalendarView } = $props();
 
 	const calendar = getCalendarState();
+
+	// `@shimmer-from-structure/svelte` is a client-only library, in two ways that
+	// both 500 a server-rendered page:
+	//   1. Its bundle imports `svelte/internal/client` and calls `user_effect` in
+	//      the component body — `effect_orphan` under the SSR renderer.
+	//   2. Its `core` dependency ships an ESM `dist/index.esm.js` with no
+	//      `"type": "module"`, so the Vercel Node runtime loads it as CommonJS and
+	//      throws `Unexpected token 'export'`.
+	// A static `import` pulls both into the SSR module graph and fails at request
+	// time on Vercel, even when the component is never rendered on the server — the
+	// module is still evaluated at import. So load it dynamically, after mount:
+	// `onMount` never runs on the server, so nothing shimmer-related enters the
+	// server graph. Until it resolves, `CalendarSkeleton` stands in. Because the
+	// component is null on both the server and the first client render, hydration
+	// matches exactly.
+	let Shimmer = $state<typeof import('@shimmer-from-structure/svelte').Shimmer | null>(null);
+
+	onMount(async () => {
+		({ Shimmer } = await import('@shimmer-from-structure/svelte'));
+	});
 
 	// Every Date below is a throwaway bound used inside the filter predicate.
 	/* eslint-disable svelte/prefer-svelte-reactivity */
@@ -121,12 +140,9 @@
 <div class="overflow-hidden rounded-xl border">
 	<CalendarHeader {view} events={filteredEvents} />
 
-	<!-- `@shimmer-from-structure/svelte` publishes a client-only build: its bundle
-	     imports `svelte/internal/client` and calls `user_effect` in the component
-	     body, so an SSR renderer throws `effect_orphan`. Mount it in the browser
-	     only. On the server, and for the first client frame, the hand-rolled
-	     `CalendarSkeleton` stands in — it SSRs cleanly and needs no measurement. -->
-	{#if browser}
+	<!-- Shimmer arrives from a dynamic import after mount (see the script). Until
+	     then — on the server and the first client frame — the skeleton stands in. -->
+	{#if Shimmer}
 		<Shimmer loading={!calendar.hydrated}>
 			{@render grid()}
 		</Shimmer>
