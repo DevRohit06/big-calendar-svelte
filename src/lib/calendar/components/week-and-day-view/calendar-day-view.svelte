@@ -8,8 +8,9 @@
 	import { getCalendarState } from '../../contexts/calendar-context.svelte';
 
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
-	import { Calendar } from '$lib/components/ui/calendar';
+	import { Calendar, Day as CalendarDay } from '$lib/components/ui/calendar';
 
+	import EventDots from '../event-dots.svelte';
 	import AddEventDialog from '../dialogs/add-event-dialog.svelte';
 	import EventBlock from './event-block.svelte';
 	import DroppableTimeBlock from '../dnd/droppable-time-block.svelte';
@@ -37,6 +38,27 @@
 
 	const visible = $derived(getVisibleHours(calendar.visibleHours, singleDayEvents));
 	const currentEvents = $derived(getCurrentEvents(singleDayEvents));
+
+	// Dots on the mini calendar mark the day an event *starts*, matching the year
+	// view. A multi-day event therefore dots only its first day, rather than
+	// smearing across the month.
+	//
+	// Read from the store, not from `singleDayEvents`/`multiDayEvents`: for the
+	// day view those props are already narrowed to the selected day, so they
+	// could only ever dot the day you are looking at. The user filter still
+	// applies, matching what the grid beside it shows.
+	const eventsByStartDay = $derived.by(() => {
+		const byDay: Record<string, IEvent[]> = {};
+
+		for (const event of calendar.events) {
+			if (calendar.selectedUserId !== 'all' && event.user.id !== calendar.selectedUserId) continue;
+
+			const key = format(parseISO(event.startDate), 'yyyy-MM-dd');
+			(byDay[key] ??= []).push(event);
+		}
+
+		return byDay;
+	});
 
 	const dayEvents = $derived(
 		singleDayEvents.filter((event) => {
@@ -188,12 +210,24 @@
 	</div>
 
 	<div class="hidden w-64 divide-y border-l md:block">
+		<!-- Cells stay at the default 32px: seven 40px columns plus padding overflow
+		     this 256px sidebar and clip Saturday. The dot row fits inside 32px. -->
 		<Calendar
 			class="mx-auto w-fit"
 			type="single"
 			value={selectedDateValue}
 			onValueChange={onSelectDate}
-		/>
+		>
+			{#snippet day({ day: date, outsideMonth })}
+				<CalendarDay>
+					{date.day}
+
+					{#if !outsideMonth}
+						<EventDots events={eventsByStartDay[date.toString()] ?? []} />
+					{/if}
+				</CalendarDay>
+			{/snippet}
+		</Calendar>
 
 		<div class="flex-1 space-y-3">
 			{#if currentEvents.length > 0}
