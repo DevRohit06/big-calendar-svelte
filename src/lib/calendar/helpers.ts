@@ -62,6 +62,31 @@ export function rangeText(view: TCalendarView, date: Date) {
 	return `${format(start, formatString)} - ${format(end, formatString)}`;
 }
 
+/** The five view routes, and the view each one shows. */
+export const VIEW_ROUTES = {
+	'/day-view': 'day',
+	'/week-view': 'week',
+	'/month-view': 'month',
+	'/year-view': 'year',
+	'/agenda-view': 'agenda'
+} as const satisfies Record<string, TCalendarView>;
+
+/**
+ * Which view a pathname is showing, or null when it is showing none of them.
+ * Global shortcuts read this to know what `←` and `→` should page through, and
+ * a null result means they should stay out of the way.
+ */
+export function viewFromPath(pathname: string): TCalendarView | null {
+	// Tolerates a base path and a trailing slash: `/base/day-view/` is the day view.
+	const trimmed = pathname.replace(/\/+$/, '');
+
+	for (const [route, view] of Object.entries(VIEW_ROUTES)) {
+		if (trimmed === route || trimmed.endsWith(route)) return view;
+	}
+
+	return null;
+}
+
 export function navigateDate(
 	date: Date,
 	view: TCalendarView,
