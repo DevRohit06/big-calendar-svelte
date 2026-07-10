@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getVisibleHours, normalizeHourRange } from './helpers';
+import { getVisibleHours, normalizeHourRange, viewFromPath } from './helpers';
 
 describe('normalizeHourRange', () => {
 	it('leaves a valid range untouched', () => {
@@ -44,5 +44,25 @@ describe('getVisibleHours', () => {
 			const range = normalizeHourRange({ from: 18, to: 7 }, edited);
 			expect(getVisibleHours(range, []).hours.length).toBeGreaterThan(0);
 		}
+	});
+});
+
+describe('viewFromPath', () => {
+	it('maps each view route to its view', () => {
+		expect(viewFromPath('/day-view')).toBe('day');
+		expect(viewFromPath('/week-view')).toBe('week');
+		expect(viewFromPath('/month-view')).toBe('month');
+		expect(viewFromPath('/year-view')).toBe('year');
+		expect(viewFromPath('/agenda-view')).toBe('agenda');
+	});
+
+	it('tolerates a trailing slash and a base path', () => {
+		expect(viewFromPath('/day-view/')).toBe('day');
+		expect(viewFromPath('/base/month-view')).toBe('month');
+	});
+
+	it('returns null off the calendar, so the arrow keys stay the browser’s', () => {
+		expect(viewFromPath('/')).toBeNull();
+		expect(viewFromPath('/settings')).toBeNull();
 	});
 });
