@@ -17,8 +17,9 @@ This is a port of [**lramos33/big-calendar**](https://github.com/lramos33/big-ca
 - ↩️ **Undo and redo**
   - `⌘Z` / `Ctrl+Z` undoes, `⇧⌘Z` / `Ctrl+Y` redoes — every create, edit, move, resize, and delete
   - Each change raises a toast with an Undo button
-- ⌨️ **Command palette**
+- ⌨️ **Command palette and keyboard shortcuts**
   - `⌘K` / `Ctrl+K` to switch views, jump to today, create an event, or search events by title
+  - `t` today, `n` new event, `g` then `d`/`w`/`m`/`y`/`a` to switch view, `←`/`→` to page, `?` for the full list
 - 🎨 **Event customization**
   - Seven event colors
   - Three badge variants (dot, colored, mixed)
@@ -40,6 +41,7 @@ This is a port of [**lramos33/big-calendar**](https://github.com/lramos33/big-ca
 - 🎯 **UI/UX**
   - Responsive, accessible, keyboard-navigable
   - Light and dark themes, toggled from the header and remembered across reloads
+  - Loading skeletons until events hydrate, and empty states that offer a Create button
 
 ## Tech stack
 
@@ -182,7 +184,7 @@ interface IUser {
 
 ### Creating events
 
-`AddEventDialog` validates but does not persist — its `onUpdate` handler is a deliberate no-op, as in the original. Wire it to your backend there.
+`AddEventDialog` validates with zod and, on submit, calls `calendar.addEvent()`, which appends the event, records an undo snapshot, and writes through to `localStorage`. To persist to a backend instead, swap the body of `addEvent`/`updateEvent`/`deleteEvent` on `CalendarState` — every mutation already routes through them.
 
 ## Notable porting decisions
 
