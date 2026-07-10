@@ -4,16 +4,20 @@ A feature-rich calendar built with **SvelteKit**, **Svelte 5 runes**, **TypeScri
 
 This is a port of [**lramos33/big-calendar**](https://github.com/lramos33/big-calendar) — Leonardo Ramos's excellent Next.js + React calendar — rebuilt for Svelte. See [Credits](#credits).
 
-> **Status:** Views, header, settings, event dialogs, and drag and drop are complete and working.
+> **Status:** Views, header, settings, drag and drop, and full event CRUD are complete and working. Events live in your browser's `localStorage`, seeded from mock data on a first visit — there is no backend.
 
 ## Features
 
 - 📅 **Five calendar views**
   - Agenda, Year, Month, Week (detailed time slots), Day (hourly breakdown)
+- ✏️ **Create, edit, and delete events**
+  - Your events are saved in this browser (`localStorage`), and survive a reload
+  - "Reset to sample data" in settings puts the demo back the way it started
 - 🎨 **Event customization**
   - Seven event colors
   - Three badge variants (dot, colored, mixed)
   - Single- and multi-day events, with multi-day events spanning cells
+  - Busy month cells reveal their hidden events in a popover
 - 🖱️ **Drag and drop**
   - Drag events onto another day in the month view, or onto any quarter-hour slot in the week and day views
   - Resize events by their top or bottom edge to change start or end time, with keyboard support
@@ -28,7 +32,7 @@ This is a port of [**lramos33/big-calendar**](https://github.com/lramos33/big-ca
   - Adjustable visible-hours range that auto-expands to fit outlying events
 - 🎯 **UI/UX**
   - Responsive, accessible, keyboard-navigable
-  - Dark mode support
+  - Light and dark themes, toggled from the header and remembered across reloads
 
 ## Tech stack
 
@@ -69,8 +73,7 @@ bun run build     # production build
 ```
 src/
 ├── routes/
-│   ├── +layout.server.ts             # Loads users + events (server-only)
-│   ├── +layout.svelte                # CalendarProvider
+│   ├── +layout.svelte                # ModeWatcher + CalendarProvider
 │   ├── layout.css                    # Tailwind v4 theme, custom utilities
 │   └── {day,week,month,year,agenda}-view/
 ├── lib/
