@@ -15,6 +15,8 @@
 	import AddEventDialog from '../dialogs/add-event-dialog.svelte';
 	import EventBlock from './event-block.svelte';
 	import DroppableTimeBlock from '../dnd/droppable-time-block.svelte';
+	import CreateDragPreview from '../dnd/create-drag-preview.svelte';
+	import { CreateDrag } from '../dnd/create-drag.svelte';
 	import CalendarTimeline from './calendar-time-line.svelte';
 	import WeekViewMultiDayEventsRow from './week-view-multi-day-events-row.svelte';
 
@@ -39,6 +41,12 @@
 	const visible = $derived(getVisibleHours(calendar.visibleHours, singleDayEvents));
 	const weekStart = $derived(startOfWeek(calendar.selectedDate));
 	const weekDays = $derived(Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)));
+
+	// A finished create-drag hands back a time range; mounting the dialog against
+	// it seeds a fresh form. Unmounting on close is what resets it — `superForm`
+	// seeds its defaults once, at construction.
+	let pending = $state<{ start: Date; end: Date } | null>(null);
+	const createDrag = new CreateDrag((start, end) => (pending = { start, end }));
 
 	function eventsForDay(day: Date) {
 		return singleDayEvents.filter(
@@ -117,7 +125,7 @@
 					{#each weekDays as day (day.toISOString())}
 						{@const groupedEvents = groupEvents(eventsForDay(day))}
 
-						<div class="relative">
+						<div class="relative" data-day-column>
 							{#each visible.hours as hour, index (hour)}
 								{@const isDisabled = !isWorkingHour(day, hour, calendar.workingHours)}
 
@@ -130,20 +138,14 @@
 									{/if}
 
 									{#each QUARTERS as minute (minute)}
-										<DroppableTimeBlock date={day} {hour} {minute}>
-											<AddEventDialog startDate={day} startTime={{ hour, minute }}>
-												{#snippet children(triggerProps)}
-													<div
-														{...triggerProps}
-														role="button"
-														tabindex={-1}
-														aria-label="Add event"
-														class="hover:bg-accent absolute inset-x-0 h-[24px] cursor-pointer transition-colors"
-														style="top: {(minute / 15) * 24}px"
-													></div>
-												{/snippet}
-											</AddEventDialog>
-										</DroppableTimeBlock>
+										<DroppableTimeBlock
+											date={day}
+											{hour}
+											{minute}
+											{createDrag}
+											fromHour={visible.earliestEventHour}
+											toHour={visible.latestEventHour}
+										/>
 									{/each}
 
 									<div
@@ -151,6 +153,14 @@
 									></div>
 								</div>
 							{/each}
+
+							<CreateDragPreview
+								{createDrag}
+								date={day}
+								dayKey={format(day, 'yyyy-MM-dd')}
+								fromHour={visible.earliestEventHour}
+								toHour={visible.latestEventHour}
+							/>
 
 							{#each groupedEvents as group, groupIndex (groupIndex)}
 								{#each group as event (event.id)}
@@ -175,3 +185,16 @@
 		</div>
 	</ScrollArea>
 </div>
+
+<!-- Mounted only while a drag is pending, so each gesture gets a freshly seeded
+     form. Closing it, by any route, unmounts it. -->
+{#if pending}
+	{@const selection = pending}
+	<AddEventDialog
+		bind:open={() => true, (next) => !next && (pending = null)}
+		startDate={selection.start}
+		startTime={{ hour: selection.start.getHours(), minute: selection.start.getMinutes() }}
+		endDate={selection.end}
+		endTime={{ hour: selection.end.getHours(), minute: selection.end.getMinutes() }}
+	/>
+{/if}

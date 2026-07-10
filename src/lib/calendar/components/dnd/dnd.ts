@@ -1,4 +1,4 @@
-import { addMinutes, differenceInMinutes, parseISO, set } from 'date-fns';
+import { addMinutes, differenceInMinutes, parseISO, set, startOfDay } from 'date-fns';
 
 import type { IEvent } from '../../interfaces';
 
@@ -28,6 +28,64 @@ export function isEventDragData(data: Record<string | symbol, unknown>): data is
 /** Rounds a minute delta to the nearest slot boundary. */
 export function snapToSlot(minutes: number) {
 	return Math.round(minutes / SLOT_MINUTES) * SLOT_MINUTES;
+}
+
+/** Minutes past midnight for a grid slot. */
+export function slotMinutes(hour: number, minute: number) {
+	return hour * 60 + minute;
+}
+
+/**
+ * The minute range a create-drag covers, from the slot it began on to the slot
+ * under the pointer. The far slot is inclusive, so a drag that never leaves its
+ * starting slot still yields one slot's worth of event; and dragging upward is
+ * the same gesture as dragging downward.
+ */
+export function createDragRange(anchorMinutes: number, pointerMinutes: number) {
+	return {
+		from: Math.min(anchorMinutes, pointerMinutes),
+		to: Math.max(anchorMinutes, pointerMinutes) + SLOT_MINUTES
+	};
+}
+
+/**
+ * Which slot a pointer sitting `offsetY` down a day column has landed on.
+ *
+ * Geometry rather than `document.elementFromPoint`: for most of a drag the
+ * pointer is over an event block or over the drag's own preview, neither of
+ * which is a slot, and a hit test would stall on the last slot it saw. Clamped,
+ * so dragging off the top or bottom of the column parks on a real slot instead
+ * of running off into negative minutes.
+ */
+export function slotFromOffset(
+	offsetY: number,
+	columnHeight: number,
+	fromHour: number,
+	toHour: number
+) {
+	const firstMinute = fromHour * 60;
+	const lastMinute = toHour * 60;
+
+	if (columnHeight <= 0) return firstMinute;
+
+	const raw = firstMinute + (offsetY / columnHeight) * (lastMinute - firstMinute);
+	const clamped = Math.min(Math.max(raw, firstMinute), lastMinute - SLOT_MINUTES);
+
+	return Math.floor(clamped / SLOT_MINUTES) * SLOT_MINUTES;
+}
+
+/**
+ * Turns a create-drag's minute range into real times on `day`. A drag ending in
+ * the last slot of the day runs `to` up to 1440, which lands on midnight of the
+ * following day — exactly what an event ending at midnight should say.
+ */
+export function createDragTimes(day: Date, fromMinutes: number, toMinutes: number) {
+	const midnight = startOfDay(day);
+
+	return {
+		start: addMinutes(midnight, fromMinutes),
+		end: addMinutes(midnight, toMinutes)
+	};
 }
 
 /** Re-anchors an event to `newStart`, preserving its duration. */
