@@ -15,6 +15,7 @@
         "@fontsource-variable/inter": "^5.2.8",
         "@internationalized/date": "^3.12.0",
         "@lucide/svelte": "^1.24.0",
+        "@shimmer-from-structure/svelte": "^2.4.6",
         "@sveltejs/adapter-vercel": "^6.3.4",
         "@sveltejs/kit": "^2.63.0",
         "@sveltejs/vite-plugin-svelte": "^7.1.2",
@@ -219,6 +220,10 @@
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
 
     "@rollup/pluginutils": ["@rollup/pluginutils@5.4.0", "", { "dependencies": { "@types/estree": "^1.0.0", "estree-walker": "^2.0.2", "picomatch": "^4.0.2" }, "peerDependencies": { "rollup": "^1.20.0||^2.0.0||^3.0.0||^4.0.0" }, "optionalPeers": ["rollup"] }, "sha512-MfPp06CjRLfXQ3wY0R8vJDYBy/MvVcc9OulEfR0B8Iv9ko+GCNaRZ+EpJYFl27LhKsZK0o420sYCRHCjfCgeUg=="],
+
+    "@shimmer-from-structure/core": ["@shimmer-from-structure/core@2.4.6", "", {}, "sha512-g0pC2rNtSCUdOwgfTS02x47TR8J07Rl2l1Fn4wL07LjBpg6lMvZf/NlkFdSwYxl/cvmpOL3KdpFacNLi9nocuQ=="],
+
+    "@shimmer-from-structure/svelte": ["@shimmer-from-structure/svelte@2.4.6", "", { "dependencies": { "@shimmer-from-structure/core": "2.4.6" }, "peerDependencies": { "svelte": "^5.53.5" } }, "sha512-ULNt9b2i1iPGEf7hyREY/m3jFG7yl3WxXkFSMXVateWWMoQPW06Lj64qWmCRIZG+yjcXd7IKBrR6uGOpE3RDxg=="],
 
     "@sideway/address": ["@sideway/address@4.1.5", "", { "dependencies": { "@hapi/hoek": "^9.0.0" } }, "sha512-IqO/DUQHUkPeixNQ8n0JA6102hT9CmaljNTPmQ1u8MEhBo/R4Q8eKLN/vGZxuebwOroDB4cbpjheD4+/sKFK4Q=="],
 

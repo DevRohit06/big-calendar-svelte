@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { isSameDay, parseISO } from 'date-fns';
+	import { browser } from '$app/environment';
+	import { Shimmer } from '@shimmer-from-structure/svelte';
 
 	import { getCalendarState } from '../contexts/calendar-context.svelte';
 
@@ -102,25 +104,32 @@
 	);
 </script>
 
+{#snippet grid()}
+	{#if view === 'day'}
+		<CalendarDayView {singleDayEvents} {multiDayEvents} />
+	{:else if view === 'month'}
+		<CalendarMonthView {singleDayEvents} {multiDayEvents} />
+	{:else if view === 'week'}
+		<CalendarWeekView {singleDayEvents} {multiDayEvents} />
+	{:else if view === 'year'}
+		<CalendarYearView allEvents={eventStartDates} />
+	{:else if view === 'agenda'}
+		<CalendarAgendaView {singleDayEvents} {multiDayEvents} />
+	{/if}
+{/snippet}
+
 <div class="overflow-hidden rounded-xl border">
 	<CalendarHeader {view} events={filteredEvents} />
 
-	<!-- Until the browser has read localStorage, `events` is an empty array that
-	     would flash an eventless calendar before the real data pops in. The
-	     skeleton covers that window; server-rendered HTML shows it too, so there
-	     is no hydration flicker. -->
-	{#if calendar.hydrated}
-		{#if view === 'day'}
-			<CalendarDayView {singleDayEvents} {multiDayEvents} />
-		{:else if view === 'month'}
-			<CalendarMonthView {singleDayEvents} {multiDayEvents} />
-		{:else if view === 'week'}
-			<CalendarWeekView {singleDayEvents} {multiDayEvents} />
-		{:else if view === 'year'}
-			<CalendarYearView allEvents={eventStartDates} />
-		{:else if view === 'agenda'}
-			<CalendarAgendaView {singleDayEvents} {multiDayEvents} />
-		{/if}
+	<!-- `@shimmer-from-structure/svelte` publishes a client-only build: its bundle
+	     imports `svelte/internal/client` and calls `user_effect` in the component
+	     body, so an SSR renderer throws `effect_orphan`. Mount it in the browser
+	     only. On the server, and for the first client frame, the hand-rolled
+	     `CalendarSkeleton` stands in — it SSRs cleanly and needs no measurement. -->
+	{#if browser}
+		<Shimmer loading={!calendar.hydrated}>
+			{@render grid()}
+		</Shimmer>
 	{:else}
 		<CalendarSkeleton {view} />
 	{/if}
