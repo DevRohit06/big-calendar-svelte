@@ -41,8 +41,10 @@
 	import ClockIcon from '@lucide/svelte/icons/clock';
 	import TextIcon from '@lucide/svelte/icons/text-align-start';
 	import UserIcon from '@lucide/svelte/icons/user';
+	import MapPinIcon from '@lucide/svelte/icons/map-pin';
 
 	import { getCalendarState } from '../../contexts/calendar-context.svelte';
+	import { getMeetingMeta, locationSummary } from '../../location';
 
 	import EventDetailsDialog from '../dialogs/event-details-dialog.svelte';
 
@@ -61,6 +63,10 @@
 
 	const color = $derived(
 		(calendar.badgeVariant === 'dot' ? `${event.color}-dot` : event.color) as CardColor
+	);
+
+	const meetingMeta = $derived(
+		event.location?.type === 'online' ? getMeetingMeta(event.location.url) : null
 	);
 </script>
 
@@ -99,6 +105,17 @@
 					<TextIcon class="size-3 shrink-0" />
 					<p class="text-foreground text-xs">{event.description}</p>
 				</div>
+
+				{#if event.location}
+					<div class="flex items-center gap-1">
+						{#if meetingMeta}
+							<img src={meetingMeta.faviconUrl} alt="" class="size-3 shrink-0 rounded-[2px]" />
+						{:else}
+							<MapPinIcon class="size-3 shrink-0" />
+						{/if}
+						<p class="text-foreground truncate text-xs">{locationSummary(event.location)}</p>
+					</div>
+				{/if}
 			</div>
 		</div>
 	{/snippet}

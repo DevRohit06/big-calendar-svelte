@@ -11,6 +11,7 @@
 	import EventFormFields from './event-form-fields.svelte';
 
 	import { eventSchema } from '../../schemas';
+	import { toEventLocation } from '../../location';
 
 	import type { Snippet } from 'svelte';
 
@@ -52,7 +53,8 @@
 				startTime,
 				endDate,
 				endTime,
-				color: undefined
+				color: undefined,
+				location: { type: 'online', url: '', address: '' }
 			},
 			zod4(eventSchema)
 		),
@@ -86,7 +88,8 @@
 					color: values.color,
 					description: values.description,
 					startDate: startDateTime.toISOString(),
-					endDate: endDateTime.toISOString()
+					endDate: endDateTime.toISOString(),
+					location: toEventLocation(values.location)
 				});
 
 				toastMutation(calendar, 'Event created');
