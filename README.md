@@ -1,8 +1,8 @@
 # Big Calendar — Svelte
 
-A feature-rich calendar built with **SvelteKit**, **Svelte 5 runes**, **TypeScript**, and **Tailwind CSS v4**. Five views, event editing, per-user filtering, and configurable working hours.
+A feature-rich calendar built with **SvelteKit**, **Svelte 5 runes**, **TypeScript**, and **Tailwind CSS v4**. Five views, event editing, per-user filtering, configurable working hours — and **event locations** with online-meeting links and an embedded map.
 
-This is a port of [**lramos33/big-calendar**](https://github.com/lramos33/big-calendar) — Leonardo Ramos's excellent Next.js + React calendar — rebuilt for Svelte. See [Credits](#credits).
+This began as a port of [**lramos33/big-calendar**](https://github.com/lramos33/big-calendar) — Leonardo Ramos's excellent Next.js + React calendar — rebuilt for Svelte 5. It is not a line-for-line copy: it fixes bugs from the original and adds features that aren't there, most notably [**event locations**](#beyond-the-original). See [Credits](#credits).
 
 > **Status:** Views, header, settings, drag and drop, and full event CRUD are complete and working. Events live in your browser's `localStorage`, seeded from mock data on a first visit — there is no backend.
 
@@ -20,6 +20,11 @@ This is a port of [**lramos33/big-calendar**](https://github.com/lramos33/big-ca
 - ⌨️ **Command palette and keyboard shortcuts**
   - `⌘K` / `Ctrl+K` to switch views, jump to today, create an event, or search events by title
   - `t` today, `n` new event, `g` then `d`/`w`/`m`/`y`/`a` to switch view, `←`/`→` to page, `?` for the full list
+- 📍 **Event locations** _(new — not in the original)_
+  - Attach an optional location to any event: an **online meeting** or a **physical address**
+  - Online links show the platform's favicon and a one-click **Join** button — the platform (Zoom, Google Meet, Teams, Jitsi, …) is detected from the URL, so any link works
+  - Physical addresses render on an embedded **map**, geocoded from the address string
+  - See [Beyond the original](#beyond-the-original)
 - 🎨 **Event customization**
   - Seven event colors
   - Three badge variants (dot, colored, mixed)
@@ -53,6 +58,7 @@ This is a port of [**lramos33/big-calendar**](https://github.com/lramos33/big-ca
 | UI components   | shadcn-svelte (bits-ui)                 | shadcn/ui (Radix)       |
 | Forms           | sveltekit-superforms + formsnap + zod 4 | react-hook-form + zod 3 |
 | Date handling   | date-fns v4                             | date-fns v3             |
+| Maps            | Leaflet + OpenStreetMap _(this port)_   | —                       |
 | Icons           | @lucide/svelte                          | lucide-react            |
 | State           | Svelte 5 runes + context                | React Context           |
 | Package manager | bun                                     | npm                     |
@@ -171,6 +177,7 @@ interface IEvent {
 	endDate: string; // ISO string
 	color: 'blue' | 'green' | 'red' | 'yellow' | 'purple' | 'orange' | 'gray';
 	user: IUser;
+	location?: IEventLocation; // optional — see "Beyond the original"
 }
 
 interface IUser {
@@ -178,6 +185,12 @@ interface IUser {
 	name: string;
 	picturePath: string | null;
 }
+
+// A location is either an online meeting or a physical place — never a mix of
+// both, so it is modeled as a discriminated union.
+type IEventLocation =
+	| { type: 'online'; url: string }
+	| { type: 'physical'; address: string; lat?: number; lng?: number };
 ```
 
 > **Note:** `src/lib/calendar/mocks.ts` generates its events with `Math.random()` at module load, so only import it from a server `load`. Pulling it into a component would generate different events on the server and the client, and hydration would tear.
@@ -185,6 +198,21 @@ interface IUser {
 ### Creating events
 
 `AddEventDialog` validates with zod and, on submit, calls `calendar.addEvent()`, which appends the event, records an undo snapshot, and writes through to `localStorage`. To persist to a backend instead, swap the body of `addEvent`/`updateEvent`/`deleteEvent` on `CalendarState` — every mutation already routes through them.
+
+## Beyond the original
+
+The React app models an event as a time, a title, a color, and a user. But _where_ an event happens matters as much as _when_ — a Zoom link and a street address are not the same thing. This port adds an optional **location** to every event, modeled as a discriminated union rather than the flat US-address form a first pass might reach for:
+
+- **Online** — a meeting link. The platform name and favicon are derived from the URL's host, so Zoom, Google Meet, Teams, Jitsi, Webex, Whereby, or a self-hosted link all work without a hard-coded provider list. The details dialog shows a one-click **Join** button.
+- **Physical** — a free-text address (any country — not a US street/city/state/ZIP form). The details dialog renders it on an embedded **Leaflet** map, geocoded on the fly from the address.
+
+Design notes:
+
+- **Optional and non-breaking.** Events without a location behave exactly as before; an empty location is stripped on submit, so nothing is stored until you actually fill it in.
+- **The map never touches SSR.** Leaflet is loaded from a CDN inside `onMount`, so it never enters the server module graph — the same client-only pattern the calendar shell already uses for its shimmer library. No new npm dependency is added, and the server bundle contains zero map code.
+- **Favicons come from a public icon service** keyed on the link's host, which falls back to a generic globe for unknown hosts, so the icon never renders broken.
+
+> Locations are geocoded on display via OpenStreetMap's Nominatim (public endpoint, ~1 req/sec). A production deployment would want a dedicated geocoding key and to persist the resulting `lat`/`lng` — the `IEventLocation` type already carries the optional fields for it.
 
 ## Notable porting decisions
 
@@ -201,6 +229,7 @@ Two bugs in the original were fixed along the way: `getEventBlockStyle` mutated 
 ## Roadmap
 
 - [ ] Persist badge variant and working hours across reloads.
+- [ ] Persist geocoded `lat`/`lng` and swap Nominatim for a keyed geocoding service.
 - [ ] Component tests (vitest + vitest-browser-svelte are already configured).
 
 ## Credits
