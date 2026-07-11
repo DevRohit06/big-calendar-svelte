@@ -12,6 +12,7 @@
 	import EventFormFields from './event-form-fields.svelte';
 
 	import { eventSchema } from '../../schemas';
+	import { toEventLocation } from '../../location';
 
 	import type { Snippet } from 'svelte';
 	import type { IEvent } from '../../interfaces';
@@ -41,7 +42,12 @@
 				startTime: { hour: start.getHours(), minute: start.getMinutes() },
 				endDate: end,
 				endTime: { hour: end.getHours(), minute: end.getMinutes() },
-				color: event.color
+				color: event.color,
+				location: {
+					type: event.location?.type ?? 'online',
+					url: event.location?.type === 'online' ? event.location.url : '',
+					address: event.location?.type === 'physical' ? event.location.address : ''
+				}
 			},
 			zod4(eventSchema)
 		),
@@ -76,7 +82,8 @@
 					color: values.color,
 					description: values.description,
 					startDate: startDateTime.toISOString(),
-					endDate: endDateTime.toISOString()
+					endDate: endDateTime.toISOString(),
+					location: toEventLocation(values.location)
 				});
 
 				toastMutation(calendar, 'Event updated');

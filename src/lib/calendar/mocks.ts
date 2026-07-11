@@ -1,32 +1,52 @@
 import type { TEventColor } from './types';
-import type { IEvent, IUser } from './interfaces';
+import type { IEvent, IEventLocation, IUser } from './interfaces';
 
 // ================================== //
 
 export const USERS_MOCK: IUser[] = [
 	{
+		id: 'b1f6d2c4-8a3e-4f21-9c7b-2d5e6f8a1b30',
+		name: 'Rohit',
+		picturePath: 'https://www.rohitk06.in/android-chrome-512x512.png'
+	},
+	{
 		id: 'dd503cf9-6c38-43cf-94cc-0d4032e2f77a',
 		name: 'Leonardo Ramos',
-		picturePath: null
+		// Deterministic placeholder avatars, seeded by id so each user is stable.
+		picturePath: 'https://i.pravatar.cc/150?u=dd503cf9-6c38-43cf-94cc-0d4032e2f77a'
 	},
 	{
 		id: 'f3b035ac-49f7-4e92-a715-35680bf63175',
 		name: 'Michael Doe',
-		picturePath: null
+		picturePath: 'https://i.pravatar.cc/150?u=f3b035ac-49f7-4e92-a715-35680bf63175'
 	},
 	{
 		id: '3e36ea6e-78f3-40dd-ab8c-a6c737c3c422',
 		name: 'Alice Johnson',
-		picturePath: null
+		picturePath: 'https://i.pravatar.cc/150?u=3e36ea6e-78f3-40dd-ab8c-a6c737c3c422'
 	},
 	{
 		id: 'a7aff6bd-a50a-4d6a-ab57-76f76bb27cf5',
 		name: 'Robert Smith',
-		picturePath: null
+		picturePath: 'https://i.pravatar.cc/150?u=a7aff6bd-a50a-4d6a-ab57-76f76bb27cf5'
 	}
 ];
 
 const COLORS: TEventColor[] = ['blue', 'green', 'red', 'yellow', 'purple', 'orange', 'gray'];
+
+// Sample locations: a mix of online meetings (real provider hosts, so the
+// favicon/label derivation has something to work with) and physical addresses
+// (well-known places so the map geocodes reliably).
+const LOCATIONS: IEventLocation[] = [
+	{ type: 'online', url: 'https://zoom.us/j/9876543210' },
+	{ type: 'online', url: 'https://meet.google.com/abc-defg-hij' },
+	{ type: 'online', url: 'https://teams.microsoft.com/l/meetup-join/19:meeting_xyz' },
+	{ type: 'online', url: 'https://meet.jit.si/big-calendar-sync' },
+	{ type: 'physical', address: '350 5th Ave, New York, NY 10118, USA' },
+	{ type: 'physical', address: '1600 Amphitheatre Parkway, Mountain View, CA 94043, USA' },
+	{ type: 'physical', address: '10 Downing St, London SW1A 2AA, UK' },
+	{ type: 'physical', address: 'Praça da Sé, São Paulo, Brazil' }
+];
 
 const EVENTS = [
 	"Doctor's appointment",
@@ -127,7 +147,10 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 			title: 'My wedding :)',
 			color: 'red',
 			description: "Can't wait to see the most beautiful woman in that dress!",
-			user: USERS_MOCK[0]
+			// The original author's easter egg — keep it pinned to Leonardo even as
+			// other users are added ahead of him in the list.
+			user: USERS_MOCK.find((u) => u.name === 'Leonardo Ramos') ?? USERS_MOCK[0],
+			location: { type: 'physical', address: 'Copacabana Beach, Rio de Janeiro, Brazil' }
 		}
 	];
 
@@ -158,6 +181,79 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 	if (now.getMonth() !== 8 || now.getDate() !== 20) {
 		// Month is 0-indexed (8 = September)
 		result.push(currentEvent);
+	}
+
+	// A handful of events pinned to Rohit, spread across the next few days with a
+	// mix of online links and physical locations, so his events (and the location
+	// feature) are always visible without relying on the random assignment below.
+	const rohit = USERS_MOCK.find((u) => u.name === 'Rohit') ?? USERS_MOCK[0];
+	const rohitEvents: {
+		dayOffset: number;
+		hour: number;
+		durationMin: number;
+		title: string;
+		color: TEventColor;
+		location: IEventLocation;
+	}[] = [
+		{
+			dayOffset: 0,
+			hour: 15,
+			durationMin: 45,
+			title: 'Design sync',
+			color: 'blue',
+			location: { type: 'online', url: 'https://meet.google.com/rohit-design-sync' }
+		},
+		{
+			dayOffset: 1,
+			hour: 10,
+			durationMin: 30,
+			title: 'Sprint planning',
+			color: 'purple',
+			location: { type: 'online', url: 'https://zoom.us/j/rohit1234' }
+		},
+		{
+			dayOffset: 1,
+			hour: 13,
+			durationMin: 60,
+			title: 'Lunch with the team',
+			color: 'orange',
+			location: { type: 'physical', address: 'Cubbon Park, Bengaluru, India' }
+		},
+		{
+			dayOffset: 2,
+			hour: 11,
+			durationMin: 45,
+			title: '1:1 with manager',
+			color: 'green',
+			location: { type: 'online', url: 'https://teams.microsoft.com/l/meetup-join/rohit-1on1' }
+		},
+		{
+			dayOffset: 3,
+			hour: 18,
+			durationMin: 90,
+			title: 'Client workshop',
+			color: 'red',
+			location: { type: 'physical', address: 'WeWork Galaxy, Residency Road, Bengaluru, India' }
+		}
+	];
+
+	for (const spec of rohitEvents) {
+		const start = new Date(now);
+		start.setDate(now.getDate() + spec.dayOffset);
+		start.setHours(spec.hour, 0, 0, 0);
+		const end = new Date(start.getTime() + spec.durationMin * 60 * 1000);
+
+		result.push({
+			id: currentId++,
+			startDate: start.toISOString(),
+			endDate: end.toISOString(),
+			title: spec.title,
+			color: spec.color,
+			description:
+				'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+			user: rohit,
+			location: spec.location
+		});
 	}
 
 	// Generate the remaining events
@@ -223,7 +319,11 @@ const mockGenerator = (numberOfEvents: number): IEvent[] => {
 			color: COLORS[Math.floor(Math.random() * COLORS.length)],
 			description:
 				'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-			user: USERS_MOCK[Math.floor(Math.random() * USERS_MOCK.length)]
+			user: USERS_MOCK[Math.floor(Math.random() * USERS_MOCK.length)],
+			// Roughly a third of events carry a location, matching the React PR's mix.
+			...(Math.random() < 0.3
+				? { location: LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)] }
+				: {})
 		});
 
 		i++;
